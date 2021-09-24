@@ -1,59 +1,47 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
+import "./EthProject.sol";
 import "hardhat/console.sol";
 
+/**
+ *
+ * @title EthStarter
+ * @author Olendolorian
+ * @notice Factory contract that creates and maintains a list of projects.
+ *
+ */
 contract EthStarter {
+
+    EthProject[] private projects;
+
+    event ProjectStarted(
+        address contractAddress,
+        address projectCreator,
+        string projectName,
+        uint256 projectGoal
+    );
     
-    
-    
-    constructor() {
-        //TODO: Add Initial values
+    /// @dev Creates new EthProjects.
+    function createProject(
+        string memory projectName,
+        uint projectGoal
+    )   external {
+        EthProject newProject = new EthProject(payable(msg.sender), projectName, projectGoal);
+        projects.push(newProject);
+        emit ProjectStarted(
+            address(newProject),
+            msg.sender,
+            projectName,
+            projectGoal
+        );
     }
-}
 
-
-/// @title EthStarter Project
-/// @author Olendolorian
-/// @notice This contract is used to manage the state of EthStarter Projects
-/// @dev All function calls are currently implemented without side effects
-contract Project {
-    //create a project
-    //view project status
-    //project address
-    //return all projects
-    
-    enum ProjectStatus {
-       Open,
-       Expired,
-       Successful,
-       Terminated
+    /** 
+      * @dev Function to get all projects' contract addresses.
+      * @return A list of all projects' contract addreses
+      */
+    function showProjects() external view returns(EthProject[] memory){
+        return projects;
     }
-    /// Initialize all projects to have a default status of Open 
-    ProjectStatus public projectStatus = ProjectStatus.Open;
-
-    string public projectName;
-    address payable public projectCreator;
-    uint public projectGoal;
-    uint public endDate;
-    uint public projectBalance;
-    mapping (address => uint) contributors;
-
-    /**
-        Creator
-        StartDate
-        EndDate
-        Project Balance
-     */
-    constructor(
-        string memory _projectName,
-        address payable _projectCreator,
-        uint _projectGoal
-    ) {
-        //TODO: Add Initial values
-        projectName = _projectName;
-        projectCreator = _projectCreator;
-        projectGoal = _projectGoal;
-    }
-    
 }

@@ -6,6 +6,14 @@ This is a full stack dapp comprised of Solidity smart contracts for a Eth Kickst
 - Hardhart and Ether.js
 - Unit tests
 
+
+# Implementation
+
+Two smart contracts are contained in the `src/contracts` folder. These are the:
+- EthStarter: Factory contract for creating projects.
+- EthProject: Crowdfunding project contracts that implements a portion of ERC721 for token minting based on contributions.
+- Two basic unit tests in `src/test` for both smart contracts. The test coverage is very low and I'll be adding more tests in the future.
+
 # Project Brief
 - The smart contract is reusable; multiple projects can be registered and accept ETH concurrently.
 - The goal is a preset amount of ETH.
