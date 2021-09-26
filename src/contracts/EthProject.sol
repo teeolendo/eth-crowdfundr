@@ -42,6 +42,7 @@ contract EthProject {
     mapping(uint256 => address) private _tiers;
     mapping (address => uint) public contributions;
     uint public idCounter = 0;
+    uint public projectBalance;
 
     event ContributionReceived(address contributor, uint amount, uint projectBalance);
     event ContributorStatusUpdated(address creator, string contributorStatus);
@@ -88,13 +89,14 @@ contract EthProject {
         require(msg.sender != address(0),  "Address not found");
         require(msg.value >= 0.01 ether, "0.01 ether is the minimum contribution required");
         contributions[msg.sender] += msg.value;
+        projectBalance += msg.value;
         ContributorTier contributorTier = ContributorTier.Bronze;
         if(msg.value >= 0.25 ether || msg.value < 1 ether){
             contributorTier = ContributorTier.Silver;
         } else if(msg.value >= 1 ether) {
             contributorTier = ContributorTier.Gold;
         }
-        emit ContributionReceived(msg.sender, msg.value, address(this).balance);
+        emit ContributionReceived(msg.sender, msg.value, projectBalance);
         uint token = _mint(msg.sender, contributorTier);
         _updateProjectStatus();
         return token;
@@ -108,16 +110,20 @@ contract EthProject {
         require(contributions[msg.sender] > 0, "You have no funds stored for this campaign");
         uint amount = contributions[msg.sender];
         contributions[msg.sender] = 0;
-        payable(msg.sender).transfer(amount);
+        projectBalance -= msg.value;
+        (bool sent, ) = msg.sender.call{value:amount}("");
+        require(sent, "Refund failed");
     }
 
     /**
      * @dev Allows the creator to withdraw funds once the project meets its goal.
      */
     function withdraw() external payable projectState(ProjectStatus.Successful) isProjectCreator {
-        require(msg.value < address(this).balance, "Value exceeds total project balance");
-        payable(projectCreator).transfer(msg.value);
-        emit CreatorPaid(msg.sender, msg.value, address(this).balance);
+        require(msg.value < projectBalance, "Value exceeds total project balance");
+        projectBalance -= msg.value;
+        (bool sent, ) = msg.sender.call{value:msg.value}("");
+        require(sent, "Unable to Withdraw");
+        emit CreatorPaid(msg.sender, msg.value, projectBalance);
     }
 
     /**
@@ -147,9 +153,9 @@ contract EthProject {
      * @dev Update Project Status based on the Project Goal and Project Expiry Date
      */ 
     function _updateProjectStatus() internal {
-        if(address(this).balance >= projectGoal){
+        if(projectBalance >= projectGoal){
             projectStatus = ProjectStatus.Successful;
-            emit ProjectSuccess(projectCreator, address(this).balance);
+            emit ProjectSuccess(projectCreator, projectBalance);
         } else if (projectExpiryDate >= block.timestamp) {
            _terminateProject();
         }
@@ -160,7 +166,7 @@ contract EthProject {
      */
     function _terminateProject() internal {
         projectStatus = ProjectStatus.Terminated;
-        emit ProjectTerminated(projectCreator, address(this).balance);
+        emit ProjectTerminated(projectCreator, projectBalance);
     }
 
     /**

@@ -1,18 +1,28 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const abi = require("../src/artifacts/contracts/EthProject.sol/EthProject.json").abi;
 
-describe("EthStarter", function () {
-  it("Should return a new list of projects", async function () {
-    const [account1, account2, account3] = await ethers.getSigners()
-    const EthProject = await ethers.getContractFactory("EthStarter")
-    const ethStarter = await EthProject.deploy()
+describe("EthStarter", () => {
+
+  let ethStarter;
+  let EthProject;
+  let accounts;
+
+  beforeEach( async () => {
+    accounts = await ethers.getSigners()
+    EthProject = await ethers.getContractFactory("EthStarter")
+    ethStarter = await EthProject.deploy()
     await ethStarter.deployed();
-    
+  })
+  
+  it("belongs to the creator", async function () {
+    await ethStarter.createProject("Fund a Bike", 4)
+    console.log(await ethStarter.showProjects())
+    expect(await ethStarter.showProjects()).to.equal([accounts[0].address])
+  })
 
-    const newProject = await ethStarter.createProject("Fund a Bike", 4)
-    await newProject.wait();
-    await expect(newProject).to.emit(ethStarter, 'ProjectStarted')
-    await expect(await newProject.showProjects().length).to.deep.equal(1);
-    
-  });
+  // it("to emit a Project Started", async function () {
+  //   await ethStarter.createProject("Fund a Bike", 4)
+  //   expect(await ethStarter.to.emit(ethStarter, 'ProjectStarted'))
+  // })
 });
